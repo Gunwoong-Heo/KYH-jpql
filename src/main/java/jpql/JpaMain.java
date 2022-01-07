@@ -368,7 +368,14 @@ public class JpaMain {
             for (Team team : result2) {
                 // db입장에서 일대다를 조인하게 되면 데이터가 뻥튀기가 된다.
                 System.out.println("team = " + team.getName() + " | members = " + team.getMembers().size() );
+                for (Member member : team.getMembers()) {
+                    System.out.println("-> member = " + member);
+                }
             }
+//            SQL의 DISTINCT는 중복된 결과를 제거하는 명령
+//            • JPQL의 DISTINCT 2가지 기능 제공
+//            • 1. SQL에 DISTINCT를 추가
+//            • 2. 애플리케이션에서 엔티티 중복 제거
 
             tx.commit();
 
