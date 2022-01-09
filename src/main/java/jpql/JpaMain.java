@@ -394,6 +394,8 @@ public class JpaMain {
             
             tx.commit();
 */
+
+/*
             // TODO : 페치조인2 - 한계
             Team teamA = new Team();
             teamA.setName("TeamA");
@@ -458,6 +460,61 @@ public class JpaMain {
                     System.out.println("-> member = " + member);
                 }
             }
+
+            tx.commit();
+*/
+
+            // TODO : 엔티티 직접 사용
+            Team teamA = new Team();
+            teamA.setName("TeamA");
+            em.persist(teamA);
+
+            Team teamB = new Team();
+            teamB.setName("TeamB");
+            em.persist(teamB);
+
+            Member member1 = new Member();
+            member1.setUsername("회원1");
+            member1.setTeam(teamA);
+            em.persist(member1);
+
+            Member member2 = new Member();
+            member2.setUsername("회원2");
+            member2.setTeam(teamA);
+            em.persist(member2);
+
+            Member member3 = new Member();
+            member3.setUsername("회원3");
+            member3.setTeam(teamB);
+            em.persist(member3);
+
+            em.flush();
+            em.clear();
+
+            // 엔티티를 파라미터로 전달
+//            String query = "select m from Member m where m = :member";
+//            Member findMember = em.createQuery(query, Member.class)
+//                    .setParameter("member", member1)
+//                    .getSingleResult();
+
+            // 엔티티 식별자를 직접 전달
+            String query = "select m from Member m where m.id = :member";
+            Member findMember = em.createQuery(query, Member.class)
+                    .setParameter("member", member1.getId())
+                    .getSingleResult();
+            System.out.println("findMember = " + findMember);
+            
+            // 엔티티 직접사용 (foreign키)
+            String query2 = "select m from Member m where m.team = :team";
+            List<Member> result = em.createQuery(query2, Member.class)
+                    .setParameter("team", teamA)
+                    .getResultList();
+            System.out.println("엔티티 직접사용 (foreign키)");
+            for (Member member : result) {
+                System.out.println("member = " + member);
+            }
+
+            tx.commit();
 
         } catch (Exception e) {
             tx.rollback();
