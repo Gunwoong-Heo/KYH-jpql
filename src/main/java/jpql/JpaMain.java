@@ -517,6 +517,8 @@ public class JpaMain {
 
             tx.commit();
 */
+
+/*
             // TODO : Named 쿼리
             Team teamA = new Team();
             teamA.setName("TeamA");
@@ -544,7 +546,7 @@ public class JpaMain {
             em.flush();
             em.clear();
 
-            /* Named 쿼리 - 정적 쿼리 */
+            // Named 쿼리 - 정적 쿼리
             // 미리 정의해서 이름을 부여해두고 사용하는 JPQL
             // 정적 쿼리
             // 어노테이션, XML에 정의
@@ -557,6 +559,53 @@ public class JpaMain {
                 System.out.println("member = " + member);
             }
 
+            tx.commit();
+*/
+
+            // TODO : 벌크 연산
+            Team teamA = new Team();
+            teamA.setName("TeamA");
+            em.persist(teamA);
+
+            Team teamB = new Team();
+            teamB.setName("TeamB");
+            em.persist(teamB);
+
+            Member member1 = new Member();
+            member1.setUsername("회원1");
+            member1.setTeam(teamA);
+            em.persist(member1);
+
+            Member member2 = new Member();
+            member2.setUsername("회원2");
+            member2.setTeam(teamA);
+            em.persist(member2);
+
+            Member member3 = new Member();
+            member3.setUsername("회원3");
+            member3.setTeam(teamB);
+            em.persist(member3);
+
+            em.flush();
+            em.clear();
+
+            // flush 자동 호출(commit이나 query가 나갈때 자동호출된다. /  when? : auto 모드일때)
+            int resultCount = em.createQuery("update Member m set m.age = 20")
+                    .executeUpdate();
+            System.out.println("resultCount = " + resultCount);
+            
+            // flush는 영속성 컨텍스트의 내용을 db에 반영하는 것이 db의 내용을 영속성 컨텍스트에 반영하는 것은 아님.
+            // 그리고 flush 했다고 영속성 컨텍스트가 지워지는 것은 아니다. ( clear를 해야 지워짐 )
+            // 위에서 db에 executeUpdate를 했지만 세건 모두 0이 출력
+            System.out.println("member1.getAge() = " + member1.getAge());
+            System.out.println("member2.getAge() = " + member2.getAge());
+            System.out.println("member3.getAge() = " + member3.getAge());
+
+            // 데이터 정합성을 확보하려면, 벌크연산 수행후 영속성컨텍스트를 초기화해주고
+            em.clear();
+            // 새로가져와야함
+            Member findMember = em.find(Member.class, member1.getId());
+            System.out.println("findMember = " + findMember); // select 쿼리가 나가고 다시 조회해온다.
 
             tx.commit();
 
