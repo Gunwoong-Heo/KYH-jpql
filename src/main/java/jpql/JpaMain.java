@@ -310,6 +310,7 @@ public class JpaMain {
             tx.commit();
 */
 
+/*
             // TODO : 페치조인1 - 기본
             Team teamA = new Team();
             teamA.setName("TeamA");
@@ -365,6 +366,7 @@ public class JpaMain {
             List<Team> result2 = em.createQuery(query2, Team.class)
                     .getResultList();
             System.out.println("컬렉션 페치 조인");
+            System.out.println("result2.size() = " + result2.size());
             for (Team team : result2) {
                 // db입장에서 일대다를 조인하게 되면 데이터가 뻥튀기가 된다.
                 System.out.println("team = " + team.getName() + " | members = " + team.getMembers().size() );
@@ -377,7 +379,85 @@ public class JpaMain {
 //            • 1. SQL에 DISTINCT를 추가
 //            • 2. 애플리케이션에서 엔티티 중복 제거
 
+            String query3 = "select distinct t from Team t join fetch t.members";  // SQL에 DISTINCT를 추가하지만 데이터가 다르므로 SQL 결과에서 중복제거 실패 (한 row가 완전이 똑같아야 distinct가 적용이 된다.)
+            List<Team> result3 = em.createQuery(query3, Team.class)
+                    .getResultList();
+            System.out.println("distinct 적용");
+            // DISTINCT가 추가로 애플리케이션에서 중복 제거시도
+            System.out.println("result3.size() = " + result3.size());
+            for (Team team : result3) {
+                System.out.println("team = " + team.getName() + " | members = " + team.getMembers().size() );
+                for (Member member : team.getMembers()) {
+                    System.out.println("-> member = " + member);
+                }
+            }
+            
             tx.commit();
+*/
+            // TODO : 페치조인2 - 한계
+            Team teamA = new Team();
+            teamA.setName("TeamA");
+            em.persist(teamA);
+
+            Team teamB = new Team();
+            teamB.setName("TeamB");
+            em.persist(teamB);
+
+            Member member1 = new Member();
+            member1.setUsername("회원1");
+            member1.setTeam(teamA);
+            em.persist(member1);
+
+            Member member2 = new Member();
+            member2.setUsername("회원2");
+            member2.setTeam(teamA);
+            em.persist(member2);
+
+            Member member3 = new Member();
+            member3.setUsername("회원3");
+            member3.setTeam(teamB);
+            em.persist(member3);
+
+            em.flush();
+            em.clear();
+
+            // 페치 조인 대상에게는 별칭을 줄 수 없다.(하이버네이트는 가능, 하지만 가급적 사용X)
+            // 여기서 members에 조건을 걸어서 추리고 싶으면 Member 객체를 조건걸어서 조회하는 별도의 쿼리를 날리는 것이 좋다.
+//            String query = "select t from Team t join fetch t.members m where m.age> 10"; // Team 에서 객체 그래프 탐색(?)으로 members를 가져올 때는 members 전체를 다 가져오게끔 설계가 되어있다.
+
+            // 둘 이상의 컬렉션은 페치 조인 할 수 없다.
+
+            //• 컬렉션을 페치 조인하면 페이징 API(setFirstResult, setMaxResults)를 사용할 수 없다.
+            //• 일대일, 다대일 같은 단일 값 연관 필드들은 페치 조인해도 페이징 가능
+            //• 하이버네이트는 경고 로그를 남기고 메모리에서 페이징(매우 위험) (로그 -> WARN: HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!)
+            //  쿼리 찍히는 것을 보면 페이징 쿼리가 없다 -> 데이터가 100만건 이면, 100만건 다 메모리에 퍼 올린다음 메모리에서 페이징 -> 장애
+//            String query = "select t from Team t join fetch t.members";
+//            List<Team> result = em.createQuery(query, Team.class)
+//                    .setFirstResult(0)
+//                    .setMaxResults(1)
+//                    .getResultList();
+            // 해결책1 : 쿼리를 뒤집는다!
+//            String query = "select m from Member m join fetch m.team";  // 다대일 관계로 query를 날림으로서 페이징에 문제가 없어진다.
+//            List<Team> result = em.createQuery(query, Team.class)
+//                    .setFirstResult(0)
+//                    .setMaxResults(1)
+//                    .getResultList();
+            // 해결책2 : @BatchSize 활용 ( or 글로벌 새팅으로 persistence.xml 파일에 세팅)
+            String query = "select t From Team t";
+            List<Team> result = em.createQuery(query, Team.class)
+                    .setFirstResult(0)
+                    .setMaxResults(2)
+                    .getResultList();
+            System.out.println("result.size() = " + result.size());
+            // lazy loading으로 쿼리를 Member 관련 2번씩 더 불러오게됨 -> 성능하락  (N+1 문제 발생)
+            // 페이징 들어가면 컬렉션은 패치 조인이 안된다
+            // Team 엔티티에 `members` 에 `@BatchSize(size = 100)` 추가
+            for (Team team : result) {
+                System.out.println("team = " + team.getName() + " | members = " + team.getMembers().size() );
+                for (Member member : team.getMembers()) {
+                    System.out.println("-> member = " + member);
+                }
+            }
 
         } catch (Exception e) {
             tx.rollback();
