@@ -464,6 +464,7 @@ public class JpaMain {
             tx.commit();
 */
 
+/*
             // TODO : 엔티티 직접 사용
             Team teamA = new Team();
             teamA.setName("TeamA");
@@ -513,6 +514,49 @@ public class JpaMain {
             for (Member member : result) {
                 System.out.println("member = " + member);
             }
+
+            tx.commit();
+*/
+            // TODO : Named 쿼리
+            Team teamA = new Team();
+            teamA.setName("TeamA");
+            em.persist(teamA);
+
+            Team teamB = new Team();
+            teamB.setName("TeamB");
+            em.persist(teamB);
+
+            Member member1 = new Member();
+            member1.setUsername("회원1");
+            member1.setTeam(teamA);
+            em.persist(member1);
+
+            Member member2 = new Member();
+            member2.setUsername("회원2");
+            member2.setTeam(teamA);
+            em.persist(member2);
+
+            Member member3 = new Member();
+            member3.setUsername("회원3");
+            member3.setTeam(teamB);
+            em.persist(member3);
+
+            em.flush();
+            em.clear();
+
+            /* Named 쿼리 - 정적 쿼리 */
+            // 미리 정의해서 이름을 부여해두고 사용하는 JPQL
+            // 정적 쿼리
+            // 어노테이션, XML에 정의
+            // 애플리케이션 로딩 시점에 초기화 후 재사용
+            // 애플리케이션 로딩 시점에 쿼리를 검증
+            List<Member> result = em.createNamedQuery("Member.findByUsername", Member.class)
+                    .setParameter("username", "회원1")
+                    .getResultList();
+            for (Member member : result) {
+                System.out.println("member = " + member);
+            }
+
 
             tx.commit();
 

@@ -3,6 +3,11 @@ package jpql;
 import javax.persistence.*;
 
 @Entity
+// spring data jpa 에서는 별도에 메소드에 `NamedQuery` 를 지정해서 사용한다.(엔티티 관련 코드가 깔끔해짐)
+@NamedQuery(
+        name = "Member.findByUsername",
+        query = "select m from Member m where m.username = :username"
+)
 public class Member {
 
     @Id
